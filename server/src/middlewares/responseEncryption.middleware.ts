@@ -20,7 +20,7 @@ export const encryptResponseBody = (
 
     const timestamp = Date.now().toString();
     const nonce = randomUUID();
-    const secret = (req as Request & { hmacSecret?: string }).hmacSecret || process.env.HMAC_SECRET || "change-me";
+    const secret = (req as Request & { hmacSecret?: string }).hmacSecret || process.env.HMAC_SECRET!;
     const encryptedData = encryptPayload(body, secret);
     const signature = computeHmac(
       `${timestamp}:${nonce}:${encryptedData}`,

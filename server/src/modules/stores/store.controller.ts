@@ -2,11 +2,12 @@ import { Request, Response, NextFunction } from "express";
 import { StoreService } from "./store.service";
 import { successResponse } from "../../utils/api-response";
 import { AppError } from "../../utils/errors";
+import { storeSchema } from "./store.validators";
 
 export class StoreController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { organizationId, name, slug } = req.body;
+      const { organizationId, name, slug } = storeSchema.parse(req.body);
       if (!organizationId || !name || !slug) {
         throw new AppError("Organization, name and slug are required", 400);
       }

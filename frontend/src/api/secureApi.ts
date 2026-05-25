@@ -15,7 +15,7 @@ import {
   setHmacSecret,
 } from "../stores/auth.store";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL as string || "http://localhost:5000";
 const BOOTSTRAP_AUTH_ROUTES = new Set([
   "/api/auth/login",
   "/api/auth/register",

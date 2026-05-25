@@ -15,7 +15,7 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction) 
   const hadTokenCookie = Boolean(req.cookies?.[CSRF_COOKIE]);
   if (!hadTokenCookie) {
     res.cookie(CSRF_COOKIE, token, {
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,

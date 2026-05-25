@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { ProductService } from "./product.service";
 import { successResponse } from "../../utils/api-response";
+import { productSchema } from "./product.validators";
 
 export class ProductController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const payload = req.body;
+      const payload = productSchema.parse(req.body);
       const product = await ProductService.create(payload);
       res.status(201).json(successResponse({ product }));
     } catch (error) {

@@ -1,6 +1,6 @@
 import CryptoJS from "crypto-js";
 
-const DEFAULT_AES_SECRET = process.env.AES_SECRET || "change-me";
+const DEFAULT_AES_SECRET = process.env.AES_SECRET!
 
 export const encryptPayload = (payload: any, secret = DEFAULT_AES_SECRET) => {
   return CryptoJS.AES.encrypt(
