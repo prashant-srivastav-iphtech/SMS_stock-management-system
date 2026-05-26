@@ -1,76 +1,113 @@
+// app.ts
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
+import compression from "compression";
 import cookieParser from "cookie-parser";
-import { requestLogger, errorHandler } from "./middlewares/error.middleware";
+import "./models";
+
+import { waf } from "./middlewares/waf.middleware";
+import { requestLogger } from "./middlewares/error.middleware";
+import { errorHandler } from "./middlewares/error.middleware";
 import { securityHeaders } from "./middlewares/security.middleware";
 import { deviceFingerprint } from "./middlewares/device.middleware";
 import { replayProtection } from "./middlewares/replay.middleware";
 import { encryptResponseBody } from "./middlewares/responseEncryption.middleware";
+import { decryptRequestBody } from "./middlewares/encryption.middleware";
+import { verifyHmac } from "./middlewares/hmac.middleware";
+import { csrfProtection } from "./middlewares/csrf.middleware";
+import { RateLimit } from "./middlewares/rateLimit.middleware";
+
 import authRouter from "./modules/auth/auth.routes";
 import storeRouter from "./modules/stores/store.routes";
 import productRouter from "./modules/products/product.routes";
 import orderRouter from "./modules/orders/order.routes";
 import paymentRouter from "./modules/payments/payment.routes";
+
 import { PaymentController } from "./modules/payments/payment.controller";
-import { verifyHmac } from "./middlewares/hmac.middleware";
-import { decryptRequestBody } from "./middlewares/encryption.middleware";
-import { csrfProtection } from "./middlewares/csrf.middleware";
-import "./models";
-import { RateLimit } from "./middlewares/rateLimit.middleware";
-// import { waf } from "./middlewares/waf.middleware";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 export const app = express();
 
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+
 app.use(
   helmet({
+    crossOriginResourcePolicy: {
+      policy: "cross-origin",
+    },
+
     contentSecurityPolicy: {
       useDefaults: true,
+
       directives: {
-        "default-src": ["'self'"],
-        "script-src": ["'self'", FRONTEND_URL],
-        "connect-src": ["'self'", FRONTEND_URL],
-        "img-src": ["'self'", "data:"],
-        "style-src": ["'self'", "https:", "'unsafe-inline'"],
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", FRONTEND_URL],
+        connectSrc: ["'self'", FRONTEND_URL],
+        imgSrc: ["'self'", "data:", "blob:"],
+        styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
       },
     },
   }),
 );
 
-app.set("trust proxy", 1);
-// app.use(waf);
+app.use(securityHeaders);
+app.use(compression());
+app.use(waf);
 
 app.use(
   cors({
     origin: [FRONTEND_URL],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-signature",
+      "x-session-hmac",
+      "x-csrf-token",
+      "x-device-id",
+      "x-request-id",
+    ],
     exposedHeaders: ["x-signature", "x-session-hmac"],
   }),
 );
 
 app.post(
   "/api/payments/webhook",
-  express.raw({ type: "application/json" }),
+  express.raw({
+    type: "application/json",
+    limit: "500kb",
+  }),
   PaymentController.webhook,
 );
 
 app.use(cookieParser(process.env.COOKIE_SECRET));
-app.use(express.json({ limit: "120kb" }));
-app.use(express.urlencoded({ extended: false, limit: "120kb" }));
+
+app.use(
+  express.json({
+    limit: "120kb",
+  }),
+);
+
+app.use(
+  express.urlencoded({
+    extended: false,
+    limit: "120kb",
+  }),
+);
 
 app.use(requestLogger);
-
 app.use(RateLimit.global());
-
-app.use(securityHeaders);
 app.use(deviceFingerprint);
 app.use(replayProtection);
 app.use(verifyHmac);
-app.use(csrfProtection);
 app.use(decryptRequestBody);
+app.use(csrfProtection);
 app.use(encryptResponseBody);
 
 app.use("/api/auth", authRouter);

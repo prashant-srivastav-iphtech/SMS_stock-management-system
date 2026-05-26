@@ -12,6 +12,7 @@ import { Customers } from "./pages/Customers";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import Stores from "./pages/Stores";
+import Modal from "./components/Modal";
 
 const FullScreenLoader = () => (
   <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
@@ -109,6 +110,7 @@ const App = () => (
   <AuthProvider>
     <BrowserRouter>
       <AppShell />
+      <Modal/>
     </BrowserRouter>
   </AuthProvider>
 );

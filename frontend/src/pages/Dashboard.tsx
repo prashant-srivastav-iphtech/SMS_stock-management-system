@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import secureApi from "../api/secureApi";
 import { useAuth } from "../hooks/useAuth";
+import { useModal } from "../providers/ModalContext";
 
 type Product = {
   id: string;
@@ -60,6 +61,7 @@ const Card = ({
 
 export const Dashboard = () => {
   const { isAdmin, user } = useAuth();
+  const { handleProductId } = useModal();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -252,6 +254,7 @@ export const Dashboard = () => {
                 <div
                   key={product.id}
                   className="rounded-3xl border border-slate-200 p-4 text-slate-700"
+                  onClick={() => handleProductId(product.id)}
                 >
                   Stock alert for product{" "}
                   <span className="font-semibold text-slate-900">

@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import secureApi from "../api/secureApi";
 import { useAuth } from "../hooks/useAuth";
+import { useModal } from "../providers/ModalContext";
 
 type Product = {
   id: string;
@@ -51,6 +52,7 @@ const readErrorMessage = (error: unknown, fallback: string) => {
 
 export const Products = () => {
   const { isAdmin, isCustomer } = useAuth();
+  const { handleProductId } = useModal();
   const [products, setProducts] = useState<Product[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -412,6 +414,7 @@ export const Products = () => {
                     <article
                       key={product.id}
                       className="rounded-3xl border border-slate-200 p-5"
+                      onClick={() => handleProductId(product.id)}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
