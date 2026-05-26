@@ -2,7 +2,6 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import rateLimit from "express-rate-limit";
 import { requestLogger, errorHandler } from "./middlewares/error.middleware";
 import { securityHeaders } from "./middlewares/security.middleware";
 import { deviceFingerprint } from "./middlewares/device.middleware";
@@ -19,23 +18,26 @@ import { verifyHmac } from "./middlewares/hmac.middleware";
 import { decryptRequestBody } from "./middlewares/encryption.middleware";
 import { csrfProtection } from "./middlewares/csrf.middleware";
 import "./models";
+import { RateLimit } from "./middlewares/rateLimit.middleware";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 export const app = express();
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    useDefaults: true,
-    directives: {
-      "default-src": ["'self'"],
-      "script-src": ["'self'", FRONTEND_URL],
-      "connect-src": ["'self'", FRONTEND_URL],
-      "img-src": ["'self'", "data:"],
-      "style-src": ["'self'", "https:", "'unsafe-inline'"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "script-src": ["'self'", FRONTEND_URL],
+        "connect-src": ["'self'", FRONTEND_URL],
+        "img-src": ["'self'", "data:"],
+        "style-src": ["'self'", "https:", "'unsafe-inline'"],
+      },
     },
-  },
-}));
+  }),
+);
 
 app.use(
   cors({
@@ -46,7 +48,11 @@ app.use(
   }),
 );
 
-app.post("/api/payments/webhook", express.raw({ type: "application/json" }), PaymentController.webhook);
+app.post(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  PaymentController.webhook,
+);
 
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(express.json({ limit: "120kb" }));
@@ -54,14 +60,7 @@ app.use(express.urlencoded({ extended: false, limit: "120kb" }));
 
 app.use(requestLogger);
 
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: Number(process.env.RATE_LIMIT_MAX ?? 120),
-    standardHeaders: true,
-    legacyHeaders: false,
-  }),
-); 
+app.use(RateLimit.global());
 
 app.use(securityHeaders);
 app.use(deviceFingerprint);
@@ -70,13 +69,6 @@ app.use(verifyHmac);
 app.use(decryptRequestBody);
 app.use(csrfProtection);
 app.use(encryptResponseBody);
-
-app.use((req, res, next) => {
-  if (req.path === "/api/payments/webhook") {
-    return next();
-  }
-  next();
-});
 
 app.use("/api/auth", authRouter);
 app.use("/api/organizations", organizationRouter);

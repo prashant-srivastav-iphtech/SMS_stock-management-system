@@ -1,20 +1,16 @@
 import { Sequelize } from "@sequelize/core";
 import { PostgresDialect } from "@sequelize/postgres";
+import { env } from "../utils/envValidator";
 
 export const sequelize = new Sequelize({
   dialect: PostgresDialect,
 
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
+  database: env.DB_NAME,
+  user: env.DB_USER,
+  password: env.DB_PASS,
 
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-
-  ssl:
-    process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : false,
+  host: env.DB_HOST,
+  port: Number(env.DB_PORT ?? 5432),
 
   logging: false,
 

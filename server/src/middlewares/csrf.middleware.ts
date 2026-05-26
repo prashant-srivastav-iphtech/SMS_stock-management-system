@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../utils/errors";
+import { env } from "../utils/envValidator";
 
 const CSRF_COOKIE = "csrfToken";
 const CSRF_HEADER = "x-csrf-token";
@@ -16,7 +17,7 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction) 
   if (!hadTokenCookie) {
     res.cookie(CSRF_COOKIE, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
