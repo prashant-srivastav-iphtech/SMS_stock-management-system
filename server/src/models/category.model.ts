@@ -4,7 +4,6 @@ import { sequelize } from "../config/database";
 export class Category extends Model {
   declare id: string;
   declare name: string;
-  declare organizationId: string;
 }
 
 Category.init(
@@ -13,10 +12,6 @@ Category.init(
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-    },
-    organizationId: {
-      type: DataTypes.UUID,
-      allowNull: false,
     },
     name: {
       type: DataTypes.STRING,

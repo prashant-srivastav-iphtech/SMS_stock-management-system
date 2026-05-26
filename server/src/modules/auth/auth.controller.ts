@@ -13,9 +13,17 @@ export class AuthController {
     try {
       const payload = registerSchema.parse(req.body);
       const user = await AuthService.register(payload);
-      res.status(201).json(successResponse({ user: { id: user.id, email: user.email, role: user.role } }));
+      res
+        .status(201)
+        .json(
+          successResponse({
+            user: { id: user.id, email: user.email, role: user.role },
+          }),
+        );
     } catch (error) {
-      next(error instanceof Error ? error : new AppError("Invalid request", 400));
+      next(
+        error instanceof Error ? error : new AppError("Invalid request", 400),
+      );
     }
   }
 
@@ -25,17 +33,27 @@ export class AuthController {
       const result = await AuthService.login(payload, req);
       res.cookie("refreshToken", result.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true,
+        sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       AuthController.attachSessionHmac(res, result.hmacSecret);
-      res.status(200).json(successResponse({
-        user: { id: result.user.id, email: result.user.email, role: result.user.role },
-        accessToken: result.accessToken,
-      }));
+      res.status(200).json(
+        successResponse({
+          user: {
+            id: result.user.id,
+            email: result.user.email,
+            role: result.user.role,
+          },
+          accessToken: result.accessToken,
+        }),
+      );
     } catch (error) {
-      next(error instanceof Error ? error : new AppError("Invalid login request", 400));
+      next(
+        error instanceof Error
+          ? error
+          : new AppError("Invalid login request", 400),
+      );
     }
   }
 
@@ -54,9 +72,15 @@ export class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       AuthController.attachSessionHmac(res, result.hmacSecret);
-      res.status(200).json(successResponse({ accessToken: result.accessToken }));
+      res
+        .status(200)
+        .json(successResponse({ accessToken: result.accessToken }));
     } catch (error) {
-      next(error instanceof Error ? error : new AppError("Unable to refresh token", 401));
+      next(
+        error instanceof Error
+          ? error
+          : new AppError("Unable to refresh token", 401),
+      );
     }
   }
 
@@ -66,10 +90,18 @@ export class AuthController {
       if (token) {
         await AuthService.logout(token);
       }
-      res.clearCookie("refreshToken", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" });
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
       res.status(200).json(successResponse({ message: "Signed out" }));
     } catch (error) {
-      next(error instanceof Error ? error : new AppError("Unable to sign out", 500));
+      next(
+        error instanceof Error
+          ? error
+          : new AppError("Unable to sign out", 500),
+      );
     }
   }
 
@@ -81,7 +113,11 @@ export class AuthController {
       }
       res.status(200).json(successResponse({ user }));
     } catch (error) {
-      next(error instanceof Error ? error : new AppError("Unable to resolve user", 401));
+      next(
+        error instanceof Error
+          ? error
+          : new AppError("Unable to resolve user", 401),
+      );
     }
   }
 }

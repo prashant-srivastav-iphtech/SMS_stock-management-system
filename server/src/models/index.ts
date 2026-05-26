@@ -1,4 +1,3 @@
-import { Organization } from "./organization.model";
 import { Store } from "./store.model";
 import { Category } from "./category.model";
 import { Product } from "./product.model";
@@ -11,14 +10,7 @@ import { OrderItem } from "./orderItem.model";
 import { Payment } from "./payment.model";
 import { InventoryLog } from "./inventoryLog.model";
 import { Session } from "./session.model";
-import { AuditLog } from "./auditLog.model";
 import { RequestNonce } from "./requestNonce.model";
-
-Organization.hasMany(Store, { foreignKey: "organizationId", as: "stores" });
-Store.belongsTo(Organization, { foreignKey: "organizationId", as: "organization" });
-
-Organization.hasMany(Category, { foreignKey: "organizationId", as: "categories" });
-Category.belongsTo(Organization, { foreignKey: "organizationId", as: "organization" });
 
 Store.hasMany(Product, { foreignKey: "storeId", as: "products" });
 Product.belongsTo(Store, { foreignKey: "storeId", as: "store" });
@@ -71,12 +63,8 @@ InventoryLog.belongsTo(Store, { foreignKey: "storeId", as: "store" });
 User.hasMany(Session, { foreignKey: "userId", as: "sessions" });
 Session.belongsTo(User, { foreignKey: "userId", as: "user" });
 
-User.hasMany(AuditLog, { foreignKey: "userId", as: "auditLogs" });
-AuditLog.belongsTo(User, { foreignKey: "userId", as: "user" });
-
 export {
   User,
-  Organization,
   Store,
   Category,
   Product,
@@ -88,6 +76,5 @@ export {
   Payment,
   InventoryLog,
   Session,
-  AuditLog,
   RequestNonce,
 };

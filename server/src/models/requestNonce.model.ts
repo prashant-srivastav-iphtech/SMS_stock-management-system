@@ -21,5 +21,6 @@ RequestNonce.init(
     sequelize,
     tableName: "request_nonces",
     timestamps: true,
+    indexes: [{ fields: ["expiresAt"] }],
   },
 );

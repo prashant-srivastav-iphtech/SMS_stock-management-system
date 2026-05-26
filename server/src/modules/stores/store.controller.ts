@@ -7,11 +7,11 @@ import { storeSchema } from "./store.validators";
 export class StoreController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { organizationId, name, slug } = storeSchema.parse(req.body);
-      if (!organizationId || !name || !slug) {
-        throw new AppError("Organization, name and slug are required", 400);
+      const { name, slug } = storeSchema.parse(req.body);
+      if (!name || !slug) {
+        throw new AppError("Store name and slug are required", 400);
       }
-      const store = await StoreService.create({ organizationId, name, slug });
+      const store = await StoreService.create({ name, slug });
       res.status(201).json(successResponse({ store }));
     } catch (error) {
       next(error);

@@ -4,7 +4,6 @@ import { sequelize } from "../config/database";
 
 export class Store extends Model {
   declare id: string;
-  declare organizationId: string;
   declare name: string;
   declare slug: string;
   declare isActive: boolean;
@@ -16,10 +15,6 @@ Store.init(
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-    },
-    organizationId: {
-      type: DataTypes.UUID,
-      allowNull: false,
     },
     name: {
       type: DataTypes.STRING,

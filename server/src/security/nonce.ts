@@ -1,6 +1,8 @@
+import { Op } from "@sequelize/core";
 import { RequestNonce } from "../models/requestNonce.model";
 
 const NONCE_TTL_SECONDS = 300;
+const NONCE_SWEEP_INTERVAL_MS = 5 * 60 * 1000;
 
 export const markNonce = async (nonce: string) => {
   if (!nonce) {
@@ -34,4 +36,18 @@ export const hasSeenNonce = async (nonce: string) => {
   }
 
   return true;
+};
+
+export const cleanupExpiredNonces = async () => {
+  return RequestNonce.destroy({
+    where: { expiresAt: { [Op.lte]: new Date() } },
+  });
+};
+
+export const startNonceSweeper = (intervalMs = NONCE_SWEEP_INTERVAL_MS) => {
+  const timer = setInterval(() => {
+    cleanupExpiredNonces().catch(() => undefined);
+  }, intervalMs);
+  timer.unref();
+  return timer;
 };
