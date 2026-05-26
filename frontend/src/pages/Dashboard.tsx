@@ -1,6 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import axios from "axios";
-import { ArrowUpRight, DollarSign, Package, ShoppingBag, Users } from "lucide-react";
+import {
+  ArrowUpRight,
+  DollarSign,
+  Package,
+  ShoppingBag,
+  Users,
+} from "lucide-react";
 import secureApi from "../api/secureApi";
 import { useAuth } from "../hooks/useAuth";
 
@@ -20,11 +26,26 @@ type Order = {
   paymentStatus: string;
   createdAt: string;
   customerId: string;
-  customer?: { id: string; email: string; firstName: string; lastName?: string };
+  customer?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName?: string;
+  };
   items?: Array<{ id: string; quantity: number; product?: { name: string } }>;
 };
 
-const Card = ({ title, value, description, icon }: { title: string; value: string; description: string; icon: ReactNode }) => (
+const Card = ({
+  title,
+  value,
+  description,
+  icon,
+}: {
+  title: string;
+  value: string;
+  description: string;
+  icon: ReactNode;
+}) => (
   <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
     <div className="flex items-center justify-between">
       <div>
@@ -44,6 +65,12 @@ export const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  // const [total,setTotal] = useState(0)
+  // const [totalPage, setTotalPage] = useState(0)
+  const [alerts, setAlerts] = useState<Product[]>([]);
+
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
@@ -51,15 +78,17 @@ export const Dashboard = () => {
 
       try {
         const [orderResponse, productResponse] = await Promise.all([
-          secureApi.get<{ orders: Order[] }>(isAdmin ? "/api/orders/admin" : "/api/orders"),
-          secureApi.get<{ products: Product[] }>("/api/products"),
+          secureApi.get<{ orders: Order[] }>(
+            isAdmin ? "/api/orders/admin" : "/api/orders",
+          ),
+          secureApi.get<{ products: Product[] }>(`/api/products`),
         ]);
-
         setOrders(orderResponse.orders);
         setProducts(productResponse.products);
       } catch (error) {
         const message = axios.isAxiosError(error)
-          ? (error.response?.data as { message?: string } | undefined)?.message || "Unable to load dashboard"
+          ? (error.response?.data as { message?: string } | undefined)
+              ?.message || "Unable to load dashboard"
           : "Unable to load dashboard";
         setErrorMessage(message);
       } finally {
@@ -67,15 +96,47 @@ export const Dashboard = () => {
       }
     };
 
-    load();
-  }, [isAdmin]);
+    const loadAlerts = async () => {
+      try {
+        const response = await secureApi.get<{
+          alerts: Product[];
+          page: number;
+          limit: number;
+          total: number;
+          totalPage: number;
+        }>(
+          `/api/products/alerts/low-stock?threshold=10&page=${page}&limit=${limit}`,
+        );
+        setPage(response?.page);
+        setLimit(response?.limit);
+        setAlerts(response?.alerts);
+      } catch (error) {
+        const message = axios.isAxiosError(error)
+          ? (error.response?.data as { message?: string } | undefined)
+              ?.message || "Unable to load dashboard"
+          : "Unable to load dashboard";
+        setErrorMessage(message);
+      }
+    };
 
-  const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total), 0);
-  const pendingOrders = orders.filter((order) => ["pending", "confirmed", "processing"].includes(order.status)).length;
-  const uniqueCustomers = new Set(orders.map((order) => order.customer?.id || order.customerId)).size;
+    load();
+    if (isAdmin) {
+      loadAlerts();
+    }
+  }, [isAdmin, limit, page]);
+
+  const totalRevenue = orders.reduce(
+    (sum, order) => sum + Number(order.total),
+    0,
+  );
+  const pendingOrders = orders.filter((order) =>
+    ["pending", "confirmed", "processing"].includes(order.status),
+  ).length;
+  const uniqueCustomers = new Set(
+    orders.map((order) => order.customer?.id || order.customerId),
+  ).size;
   const totalUnits = products.reduce((sum, product) => sum + product.stock, 0);
   const recentOrders = orders.slice(0, 4);
-  const lowStockProducts = products.filter((product) => product.stock <= 10).slice(0, 4);
 
   return (
     <div className="space-y-6">
@@ -84,7 +145,9 @@ export const Dashboard = () => {
           {isAdmin ? "Operations Overview" : `Welcome back, ${user?.email}`}
         </h1>
         <p className="mt-3 text-slate-500">
-          {isAdmin ? "A live snapshot of orders, revenue, and inventory." : "Your storefront activity, orders, and available catalog in one place."}
+          {isAdmin
+            ? "A live snapshot of orders, revenue, and inventory."
+            : "Your storefront activity, orders, and available catalog in one place."}
         </p>
       </section>
 
@@ -98,32 +161,50 @@ export const Dashboard = () => {
         <Card
           title={isAdmin ? "Revenue" : "Total Spent"}
           value={`$${totalRevenue.toFixed(2)}`}
-          description={isAdmin ? "Combined value of tracked orders" : "Total value of your orders"}
+          description={
+            isAdmin
+              ? "Combined value of tracked orders"
+              : "Total value of your orders"
+          }
           icon={<DollarSign size={20} />}
         />
         <Card
           title="Orders"
           value={String(orders.length)}
-          description={isAdmin ? "Orders currently in the system" : "Orders placed from your account"}
+          description={
+            isAdmin
+              ? "Orders currently in the system"
+              : "Orders placed from your account"
+          }
           icon={<ShoppingBag size={20} />}
         />
         <Card
           title={isAdmin ? "Customers" : "Pending Orders"}
           value={String(isAdmin ? uniqueCustomers : pendingOrders)}
-          description={isAdmin ? "Unique customers with orders" : "Orders still being processed"}
+          description={
+            isAdmin
+              ? "Unique customers with orders"
+              : "Orders still being processed"
+          }
           icon={<Users size={20} />}
         />
         <Card
           title={isAdmin ? "Inventory Units" : "Products"}
           value={String(isAdmin ? totalUnits : products.length)}
-          description={isAdmin ? "Total units across active products" : "Products currently visible in the catalog"}
+          description={
+            isAdmin
+              ? "Total units across active products"
+              : "Products currently visible in the catalog"
+          }
           icon={isAdmin ? <Package size={20} /> : <ArrowUpRight size={20} />}
         />
       </div>
 
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">{isAdmin ? "Recent orders" : "Your latest orders"}</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            {isAdmin ? "Recent orders" : "Your latest orders"}
+          </h2>
           {isLoading ? (
             <p className="mt-6 text-sm text-slate-500">Loading activity...</p>
           ) : recentOrders.length === 0 ? (
@@ -131,14 +212,20 @@ export const Dashboard = () => {
           ) : (
             <div className="mt-6 space-y-4">
               {recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between rounded-3xl border border-slate-200 p-4">
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between rounded-3xl border border-slate-200 p-4"
+                >
                   <div>
                     <p className="font-semibold text-slate-900">{order.id}</p>
                     <p className="text-sm text-slate-500">
-                      {new Date(order.createdAt).toLocaleDateString()} • ${Number(order.total).toFixed(2)}
+                      {new Date(order.createdAt).toLocaleDateString()} • $
+                      {Number(order.total).toFixed(2)}
                     </p>
                   </div>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm capitalize text-emerald-700">{order.status}</span>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm capitalize text-emerald-700">
+                    {order.status}
+                  </span>
                 </div>
               ))}
             </div>
@@ -146,18 +233,31 @@ export const Dashboard = () => {
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">{isAdmin ? "Low stock alerts" : "Catalog snapshot"}</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            {isAdmin ? "Low stock alerts" : "Catalog snapshot"}
+          </h2>
           {isLoading ? (
-            <p className="mt-6 text-sm text-slate-500">Loading product data...</p>
-          ) : lowStockProducts.length === 0 ? (
             <p className="mt-6 text-sm text-slate-500">
-              {isAdmin ? "No low stock alerts right now." : "Products are available and ready to browse."}
+              Loading product data...
+            </p>
+          ) : alerts.length === 0 ? (
+            <p className="mt-6 text-sm text-slate-500">
+              {isAdmin
+                ? "No low stock alerts right now."
+                : "Products are available and ready to browse."}
             </p>
           ) : (
             <div className="mt-6 space-y-4">
-              {lowStockProducts.map((product) => (
-                <div key={product.id} className="rounded-3xl border border-slate-200 p-4 text-slate-700">
-                  Stock alert for product <span className="font-semibold text-slate-900">{product.name}</span> with only {product.stock} units left.
+              {alerts.map((product) => (
+                <div
+                  key={product.id}
+                  className="rounded-3xl border border-slate-200 p-4 text-slate-700"
+                >
+                  Stock alert for product{" "}
+                  <span className="font-semibold text-slate-900">
+                    {product.name}
+                  </span>{" "}
+                  with only {product.stock} units left.
                 </div>
               ))}
             </div>

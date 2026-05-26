@@ -6,6 +6,12 @@ import { adminOnly } from "../../middlewares/adminOnly.middleware";
 const router = Router();
 
 router.post("/", requireAuth, adminOnly, ProductController.create);
+router.get(
+  "/alerts/low-stock",
+  requireAuth,
+  adminOnly,
+  ProductController.getLowStockAlerts,
+);
 router.get("/", ProductController.list);
 router.get("/:id", ProductController.getById);
 

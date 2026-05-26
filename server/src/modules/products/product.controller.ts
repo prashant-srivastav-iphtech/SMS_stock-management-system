@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ProductService } from "./product.service";
 import { successResponse } from "../../utils/api-response";
-import { productSchema } from "./product.validators";
+import { lowStockQuerySchema, paginationSchema, productSchema } from "./product.validators";
 
 export class ProductController {
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -16,8 +16,9 @@ export class ProductController {
 
   static async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const products = await ProductService.listPublic();
-      res.status(200).json(successResponse({ products }));
+      const query = paginationSchema.parse(req.query);
+      const result = await ProductService.listPublic(query.page, query.limit);
+      res.status(200).json(successResponse(result));
     } catch (error) {
       next(error);
     }
@@ -31,4 +32,20 @@ export class ProductController {
       next(error);
     }
   }
+
+  static async getLowStockAlerts(req: Request, res: Response, next: NextFunction) {
+    try {
+      const query = lowStockQuerySchema.parse(req.query);
+      const result = await ProductService.getLowStockAlerts(
+        query.threshold,
+        query.page,
+        query.limit,
+        query.storeId,
+      );
+      res.status(200).json(successResponse(result));
+    } catch (error) {
+      next(error);
+    }
+  }
+
 }

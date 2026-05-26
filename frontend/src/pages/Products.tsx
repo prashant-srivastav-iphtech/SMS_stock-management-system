@@ -13,7 +13,7 @@ type Product = {
   stock: number;
   reservedStock: number;
   soldStock: number;
-  damagedStock:number;
+  damagedStock: number;
   status: string;
   store?: { id: string; name: string; slug: string };
   category?: { id: string; name: string } | null;
@@ -32,7 +32,6 @@ type CheckoutItem = {
 
 const emptyForm = {
   storeId: "",
-  sku: "",
   name: "",
   description: "",
   price: "",
@@ -44,7 +43,9 @@ const readErrorMessage = (error: unknown, fallback: string) => {
     return fallback;
   }
 
-  const responsePayload = error.response?.data as { message?: string } | undefined;
+  const responsePayload = error.response?.data as
+    | { message?: string }
+    | undefined;
   return responsePayload?.message || fallback;
 };
 
@@ -60,9 +61,21 @@ export const Products = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
 
-  const loadProducts = async () => {
-    const data = await secureApi.get<{ products: Product[] }>("/api/products");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const loadProducts = async (pageNum: number = 1) => {
+    const data = await secureApi.get<{
+      products: Product[];
+      total: number;
+      totalPages: number;
+      page: number;
+    }>(`/api/products?page=${pageNum}&limit=10`);
     setProducts(data.products);
+    setTotal(data.total);
+    setTotalPages(data.totalPages);
+    setPage(data.page);
   };
 
   useEffect(() => {
@@ -71,10 +84,12 @@ export const Products = () => {
       setErrorMessage(null);
 
       try {
-        await loadProducts();
+        await loadProducts(page);
 
         if (isAdmin) {
-          const storeResponse = await secureApi.get<{ stores: Store[] }>("/api/stores");
+          const storeResponse = await secureApi.get<{ stores: Store[] }>(
+            "/api/stores",
+          );
           setStores(storeResponse.stores);
           setForm((current) => ({
             ...current,
@@ -89,9 +104,11 @@ export const Products = () => {
     };
 
     load();
-  }, [isAdmin]);
+  }, [isAdmin, page]);
 
-  const handleCreateProduct = async (event: React.SubmitEvent<HTMLFormElement>) => {
+  const handleCreateProduct = async (
+    event: React.SubmitEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -100,7 +117,6 @@ export const Products = () => {
     try {
       await secureApi.post("/api/products", {
         storeId: form.storeId,
-        sku: form.sku,
         name: form.name,
         description: form.description || undefined,
         price: Number(form.price),
@@ -112,7 +128,8 @@ export const Products = () => {
         storeId: stores[0]?.id || "",
       });
       setSuccessMessage("Product created successfully.");
-      await loadProducts();
+      setPage(1);
+      await loadProducts(1);
     } catch (error) {
       setErrorMessage(readErrorMessage(error, "Unable to create product"));
     } finally {
@@ -149,7 +166,11 @@ export const Products = () => {
   }, [cart, products]);
 
   const cartSubtotal = useMemo(
-    () => cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0),
+    () =>
+      cartItems.reduce(
+        (sum, item) => sum + Number(item.price) * item.quantity,
+        0,
+      ),
     [cartItems],
   );
 
@@ -170,15 +191,20 @@ export const Products = () => {
 
     try {
       const origin = window.location.origin;
-      const response = await secureApi.post<{ checkoutUrl: string }>("/api/orders/checkout", {
-        items,
-        successUrl: `${origin}/orders?payment=success`,
-        cancelUrl: `${origin}/products?payment=cancelled`,
-      });
+      const response = await secureApi.post<{ checkoutUrl: string }>(
+        "/api/orders/checkout",
+        {
+          items,
+          successUrl: `${origin}/orders?payment=success`,
+          cancelUrl: `${origin}/products?payment=cancelled`,
+        },
+      );
 
       window.location.assign(response.checkoutUrl);
     } catch (error) {
-      setErrorMessage(readErrorMessage(error, "Unable to start Stripe checkout"));
+      setErrorMessage(
+        readErrorMessage(error, "Unable to start Stripe checkout"),
+      );
       setIsCheckingOut(false);
     }
   };
@@ -187,8 +213,10 @@ export const Products = () => {
     const params = new URLSearchParams(window.location.search);
     const paymentState = params.get("payment");
 
-    function fun (){
-      setErrorMessage("Stripe checkout was cancelled. Your cart is still available.");
+    function fun() {
+      setErrorMessage(
+        "Stripe checkout was cancelled. Your cart is still available.",
+      );
     }
 
     if (paymentState === "cancelled") {
@@ -199,7 +227,9 @@ export const Products = () => {
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-900">{isAdmin ? "Product Management" : "Product Catalog"}</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">
+          {isAdmin ? "Product Management" : "Product Catalog"}
+        </h1>
         <p className="mt-3 text-slate-500">
           {isAdmin
             ? "Create products and review live catalog inventory."
@@ -221,22 +251,37 @@ export const Products = () => {
 
       {isAdmin && (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Create Product</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Create Product
+          </h2>
           {stores.length === 0 && !isLoading ? (
             <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
               Create a store first before adding products.
-              <Link className="ml-2 font-semibold text-amber-900 underline" to="/stores">
+              <Link
+                className="ml-2 font-semibold text-amber-900 underline"
+                to="/stores"
+              >
                 Go to Stores
               </Link>
             </div>
           ) : (
-            <form className="mt-6 grid gap-4 md:grid-cols-2" onSubmit={handleCreateProduct}>
+            <form
+              className="mt-6 grid gap-4 md:grid-cols-2"
+              onSubmit={handleCreateProduct}
+            >
               <label className="block">
-                <span className="text-sm font-medium text-slate-700">Store</span>
+                <span className="text-sm font-medium text-slate-700">
+                  Store
+                </span>
                 <select
                   className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
                   value={form.storeId}
-                  onChange={(event) => setForm((current) => ({ ...current, storeId: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      storeId: event.target.value,
+                    }))
+                  }
                   required
                 >
                   <option value="">Select a store</option>
@@ -249,56 +294,74 @@ export const Products = () => {
               </label>
 
               <label className="block">
-                <span className="text-sm font-medium text-slate-700">SKU</span>
-                <input
-                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
-                  value={form.sku}
-                  onChange={(event) => setForm((current) => ({ ...current, sku: event.target.value }))}
-                  required
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">Product Name</span>
+                <span className="text-sm font-medium text-slate-700">
+                  Product Name
+                </span>
                 <input
                   className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
                   value={form.name}
-                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
                   required
                 />
               </label>
 
               <label className="block">
-                <span className="text-sm font-medium text-slate-700">Price</span>
+                <span className="text-sm font-medium text-slate-700">
+                  Price
+                </span>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
                   value={form.price}
-                  onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      price: event.target.value,
+                    }))
+                  }
                   required
                 />
               </label>
 
               <label className="block">
-                <span className="text-sm font-medium text-slate-700">Stock</span>
+                <span className="text-sm font-medium text-slate-700">
+                  Stock
+                </span>
                 <input
                   type="number"
                   min="0"
                   className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
                   value={form.stock}
-                  onChange={(event) => setForm((current) => ({ ...current, stock: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      stock: event.target.value,
+                    }))
+                  }
                   required
                 />
               </label>
 
               <label className="block md:col-span-2">
-                <span className="text-sm font-medium text-slate-700">Description</span>
+                <span className="text-sm font-medium text-slate-700">
+                  Description
+                </span>
                 <textarea
                   className="mt-2 min-h-28 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
                   value={form.description}
-                  onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
                 />
               </label>
 
@@ -316,147 +379,194 @@ export const Products = () => {
         </section>
       )}
 
-      <div className={`grid gap-6 ${isCustomer ? "xl:grid-cols-[1.7fr_1fr]" : ""}`}>
+      <div
+        className={`grid gap-6 ${isCustomer ? "xl:grid-cols-[1.7fr_1fr]" : ""}`}
+      >
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-slate-900">{isAdmin ? "Catalog Inventory" : "Available Products"}</h2>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">{products.length} products</span>
+            <h2 className="text-lg font-semibold text-slate-900">
+              {isAdmin ? "Catalog Inventory" : "Available Products"}
+            </h2>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+              {total} total products
+            </span>
           </div>
 
           {isLoading ? (
             <p className="mt-6 text-sm text-slate-500">Loading products...</p>
           ) : (
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              {products.map((product) => {
-                // const availableQuantity = Math.max(product.stock - product.reservedStock, 0);
-                const selectedQuantity = cart[product.id] || 0;
+            <>
+              <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                {products.map((product) => {
+                  // const availableQuantity = Math.max(product.stock - product.reservedStock, 0);
+                  const selectedQuantity = cart[product.id] || 0;
 
-                   const availableNow = Math.max(
-                     product.stock - product.reservedStock,
-                     0,
-                   );
-                   const totalTracked =
-                     product.stock + product.soldStock + product.damagedStock;
+                  const availableNow = Math.max(
+                    product.stock - product.reservedStock,
+                    0,
+                  );
+                  const totalTracked =
+                    product.stock + product.soldStock + product.damagedStock;
 
-                return (
-                  <article
-                    key={product.id}
-                    className="rounded-3xl border border-slate-200 p-5"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                          {product.sku}
-                        </div>
-                        <h3 className="mt-2 text-lg font-semibold text-slate-900">
-                          {product.name}
-                        </h3>
-                        <p className="mt-2 text-sm text-slate-500">
-                          {product.description || "No description provided."}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-                        {product.status}
-                      </span>
-                    </div>
-
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl bg-slate-50 p-4">
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          Price
-                        </div>
-                        <div className="mt-2 text-lg font-semibold text-slate-900">
-                          ${Number(product.price).toFixed(2)}
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-slate-50 p-4">
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          Store
-                        </div>
-                        <div className="mt-2 text-lg font-semibold text-slate-900">
-                          {product.store?.name || "Unknown store"}
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-slate-50 p-4">
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          Total Tracked 
-                        </div>
-                        <div className="mt-2 text-lg font-semibold text-slate-900">
-                          {totalTracked}
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-slate-50 p-4">
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          Stock
-                        </div>
-                        <div className="mt-2 text-lg font-semibold text-slate-900">
-                          {product.stock}
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-slate-50 p-4">
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          Available
-                        </div>
-                        <div className="mt-2 text-lg font-semibold text-slate-900">
-                          {availableNow}
-                        </div>
-                      </div>
-                    </div>
-
-                    {isCustomer && (
-                      <div className="mt-5 rounded-3xl bg-slate-50 p-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <div className="text-sm font-semibold text-slate-900">
-                              Add to order
-                            </div>
-                            <div className="text-sm text-slate-500">
-                              Choose quantity before Stripe checkout.
-                            </div>
+                  return (
+                    <article
+                      key={product.id}
+                      className="rounded-3xl border border-slate-200 p-5"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                            {product.sku}
                           </div>
-                          <input
-                            type="number"
-                            min="0"
-                            max={availableNow}
-                            value={selectedQuantity}
-                            onChange={(event) =>
-                              handleQuantityChange(
-                                product.id,
-                                Number(event.target.value),
-                              )
-                            }
-                            className="w-24 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
-                            disabled={availableNow === 0}
-                          />
-                        </div>
-                        {availableNow === 0 && (
-                          <p className="mt-3 text-sm text-amber-700">
-                            This product is currently out of available stock.
+                          <h3 className="mt-2 text-lg font-semibold text-slate-900">
+                            {product.name}
+                          </h3>
+                          <p className="mt-2 text-sm text-slate-500">
+                            {product.description || "No description provided."}
                           </p>
-                        )}
+                        </div>
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+                          {product.status}
+                        </span>
                       </div>
-                    )}
-                  </article>
-                );
-              })}
-            </div>
+
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-2xl bg-slate-50 p-4">
+                          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Price
+                          </div>
+                          <div className="mt-2 text-lg font-semibold text-slate-900">
+                            ${Number(product.price).toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 p-4">
+                          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Store
+                          </div>
+                          <div className="mt-2 text-lg font-semibold text-slate-900">
+                            {product.store?.name || "Unknown store"}
+                          </div>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 p-4">
+                          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Total Tracked
+                          </div>
+                          <div className="mt-2 text-lg font-semibold text-slate-900">
+                            {totalTracked}
+                          </div>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 p-4">
+                          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Stock
+                          </div>
+                          <div className="mt-2 text-lg font-semibold text-slate-900">
+                            {product.stock}
+                          </div>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 p-4">
+                          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Available
+                          </div>
+                          <div className="mt-2 text-lg font-semibold text-slate-900">
+                            {availableNow}
+                          </div>
+                        </div>
+                      </div>
+
+                      {isCustomer && (
+                        <div className="mt-5 rounded-3xl bg-slate-50 p-4">
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <div className="text-sm font-semibold text-slate-900">
+                                Add to order
+                              </div>
+                              <div className="text-sm text-slate-500">
+                                Choose quantity before Stripe checkout.
+                              </div>
+                            </div>
+                            <input
+                              type="number"
+                              min="0"
+                              max={availableNow}
+                              value={selectedQuantity}
+                              onChange={(event) =>
+                                handleQuantityChange(
+                                  product.id,
+                                  Number(event.target.value),
+                                )
+                              }
+                              className="w-24 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                              disabled={availableNow === 0}
+                            />
+                          </div>
+                          {availableNow === 0 && (
+                            <p className="mt-3 text-sm text-amber-700">
+                              This product is currently out of available stock.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+
+              <>
+                {" "}
+                {totalPages > 1 && (
+                  <div className="mt-6 flex items-center justify-between gap-4">
+                    <div className="text-sm text-slate-600">
+                      Page {page} of {totalPages} ({total} total products)
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPage(Math.max(1, page - 1))}
+                        disabled={page === 1}
+                        className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => setPage(Math.min(totalPages, page + 1))}
+                        disabled={page === totalPages}
+                        className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            </>
           )}
         </section>
 
         {isCustomer && (
           <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Order Summary</h2>
-            <p className="mt-2 text-sm text-slate-500">Your order will be created first, then paid securely through Stripe.</p>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Order Summary
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Your order will be created first, then paid securely through
+              Stripe.
+            </p>
 
             {cartItems.length === 0 ? (
-              <p className="mt-6 text-sm text-slate-500">Choose products and quantities to start your order.</p>
+              <p className="mt-6 text-sm text-slate-500">
+                Choose products and quantities to start your order.
+              </p>
             ) : (
               <div className="mt-6 space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-slate-200 p-4"
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="font-semibold text-slate-900">{item.name}</div>
+                        <div className="font-semibold text-slate-900">
+                          {item.name}
+                        </div>
                         <div className="mt-1 text-sm text-slate-500">
                           {item.quantity} x ${Number(item.price).toFixed(2)}
                         </div>
@@ -485,7 +595,9 @@ export const Products = () => {
                   disabled={isCheckingOut}
                   className="w-full rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
                 >
-                  {isCheckingOut ? "Redirecting to Stripe..." : "Checkout with Stripe"}
+                  {isCheckingOut
+                    ? "Redirecting to Stripe..."
+                    : "Checkout with Stripe"}
                 </button>
               </div>
             )}

@@ -186,7 +186,7 @@ const Stores = () => {
                         {store.name}
                       </h3>
                       <p className="mt-2 text-sm text-slate-500">
-                        {store.slug} • {"Unknown organization"}
+                        {store.slug}
                       </p>
                     </div>
                     <span

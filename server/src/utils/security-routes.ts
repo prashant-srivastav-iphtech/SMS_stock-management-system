@@ -6,6 +6,8 @@ const BOOTSTRAP_AUTH_ROUTES = new Set([
   "/api/auth/refresh",
 ]);
 
+const ROUTES_WITHOUT_CSRF = new Set(["/api/auth/login", "/api/auth/register"]);
+
 const stripQuery = (value: string) => value.split("?")[0];
 
 export const getRequestPath = (req: Request) => {
@@ -19,6 +21,9 @@ export const getRequestPath = (req: Request) => {
 
   return req.path;
 };
+
+export const isCSRFNeeded = (req: Request) =>
+  ROUTES_WITHOUT_CSRF.has(getRequestPath(req));
 
 export const isBootstrapAuthRoute = (req: Request) =>
   BOOTSTRAP_AUTH_ROUTES.has(getRequestPath(req));
