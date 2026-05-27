@@ -492,12 +492,15 @@ export const Products = () => {
                               min="0"
                               max={availableNow}
                               value={selectedQuantity}
-                              onChange={(event) =>
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(event) => {
+                                event.stopPropagation();
+
                                 handleQuantityChange(
                                   product.id,
                                   Number(event.target.value),
-                                )
-                              }
+                                );
+                              }}
                               className="w-24 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
                               disabled={availableNow === 0}
                             />
