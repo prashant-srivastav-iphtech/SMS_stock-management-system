@@ -2,24 +2,6 @@
 
 import { Request, Response, NextFunction } from "express";
 
-/**
- * Production Grade Custom WAF
- *
- * Features:
- * - Browser-safe fingerprint validation
- * - Chrome / Safari / Firefox / Edge support
- * - SQL Injection protection
- * - XSS protection
- * - Command injection protection
- * - Path traversal protection
- * - SSRF protection
- * - Bot / scanner blocking
- * - AI crawler blocking
- * - Rate limiting
- * - Honeypot trap
- * - Security headers
- */
-
 const blockedPatterns: RegExp[] = [
   // ---------------- SQL Injection ----------------
   /\bUNION\b.*\bSELECT\b/i,
@@ -141,48 +123,6 @@ const scan = (value: any): boolean => {
   return false;
 };
 
-const isValidBrowser = (req: Request): boolean => {
-  const userAgent = (req.headers["user-agent"] || "").toString();
-
-  const accept = (req.headers["accept"] || "").toString();
-
-  // Allow browsers
-  const validBrowsers = [
-    "Chrome",
-    "Safari",
-    "Firefox",
-    "Edg",
-    "Opera",
-    "OPR",
-    "Brave",
-  ];
-
-  const hasValidBrowser = validBrowsers.some((browser) =>
-    userAgent.includes(browser),
-  );
-
-  // Browser must include Mozilla
-  if (!userAgent.includes("Mozilla")) {
-    return false;
-  }
-
-  if (!hasValidBrowser) {
-    return false;
-  }
-
-  // Accept headers
-  const validAccept =
-    accept.includes("text/html") ||
-    accept.includes("application/json") ||
-    accept.includes("*/*");
-
-  if (!validAccept) {
-    return false;
-  }
-
-  return true;
-};
-
 export const waf = (req: Request, res: Response, next: NextFunction) => {
   try {
     // ---------------------------------------------------
@@ -265,17 +205,6 @@ export const waf = (req: Request, res: Response, next: NextFunction) => {
     }
 
     // ---------------------------------------------------
-    // VALIDATE REAL BROWSERS
-    // ---------------------------------------------------
-
-    if (!isValidBrowser(req)) {
-      return res.status(403).json({
-        success: false,
-        message: "Invalid browser fingerprint",
-      });
-    }
-
-    // ---------------------------------------------------
     // BLOCK SUSPICIOUS HEADERS
     // ---------------------------------------------------
 
@@ -301,10 +230,6 @@ export const waf = (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    // ---------------------------------------------------
-    // QUERY SCAN
-    // ---------------------------------------------------
-
     if (scan(req.query)) {
       return res.status(403).json({
         success: false,
@@ -312,20 +237,12 @@ export const waf = (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    // ---------------------------------------------------
-    // BODY SCAN
-    // ---------------------------------------------------
-
     if (scan(req.body)) {
       return res.status(403).json({
         success: false,
         message: "Malicious payload detected",
       });
     }
-        
-    // ---------------------------------------------------
-    // HONEYPOT TRAPS
-    // ---------------------------------------------------
 
     const honeypots = [
       "/wp-admin",

@@ -18,7 +18,7 @@ import { decryptRequestBody } from "./middlewares/encryption.middleware";
 import { csrfProtection } from "./middlewares/csrf.middleware";
 import "./models";
 import { RateLimit } from "./middlewares/rateLimit.middleware";
-// import { waf } from "./middlewares/waf.middleware";
+import { waf } from "./middlewares/waf.middleware";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
@@ -40,7 +40,7 @@ app.use(
 );
 
 app.set("trust proxy", 1);
-// app.use(waf);
+app.use(waf);
 
 app.use(
   cors({

@@ -22,10 +22,6 @@ const envSchema = z.object({
     .string()
     .regex(durationRegex, "JWT_REFRESH_EXPIRES_IN must be like 7d, 30d"),
 
-  RSA_PRIVATE_KEY: z.string().min(50, "RSA_PRIVATE_KEY looks invalid"),
-
-  RSA_PUBLIC_KEY: z.string().min(50, "RSA_PUBLIC_KEY looks invalid"),
-
   DB_NAME: z.string().min(1),
 
   DB_USER: z.string().min(1),

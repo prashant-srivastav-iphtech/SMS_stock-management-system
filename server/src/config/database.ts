@@ -24,8 +24,10 @@ export const sequelize = new Sequelize({
   },
 });
 
+// for development only
 export const syncDatabase = async () => {
-  await sequelize.sync({ alter: true });
-
-  console.log("Database synced successfully");
+  if (env.NODE_ENV === "development") {
+    await sequelize.sync({ alter: true });
+    console.log("Database synced successfully");
+  }
 };
