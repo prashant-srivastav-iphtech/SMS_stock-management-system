@@ -46,45 +46,163 @@ const blockedPatterns: RegExp[] = [
 ];
 
 const blockedAgents = [
-  // Scanners
+  // API Clients
+  "postman",
+  "postmanruntime",
+  "insomnia",
+  "thunder client",
+  "thunderclient",
+  "paw/",
+  "httpie",
+  "curl",
+  "wget",
+  // Security / Vulnerability Scanners
   "sqlmap",
   "nikto",
   "nmap",
-  "acunetix",
   "masscan",
+  "zmap",
+  "acunetix",
   "nessus",
   "openvas",
+  "qualys",
   "wpscan",
-  "burpsuite",
+  "netsparker",
+  "arachni",
+  "jaeles",
+  "wapiti",
+  "whatweb",
+  "commix",
+  "havij",
+  "bbqsql",
+  "xsser",
+  "feroxbuster",
   "dirbuster",
   "gobuster",
   "ffuf",
+  "wfuzz",
+  "fimap",
+  "skipfish",
+  "burpsuite",
+  "burp",
+  "owasp zap",
+  "zap",
+  "metasploit",
+  "cobalt strike",
+  "beef",
   "hydra",
+  "medusa",
+  "patator",
 
-  // Headless
+  // Headless Browsers / Automation
   "headless",
+  "headlesschrome",
   "phantomjs",
+  "slimerjs",
   "selenium",
+  "webdriver",
   "playwright",
   "puppeteer",
+  "pyppeteer",
+  "chromedriver",
+  "geckodriver",
+  "undetected_chromedriver",
+  "electron",
+  "cefsharp",
+  "nightmare",
+  "htmlunit",
+  "mechanize",
 
-  // AI Bots
+  // AI Crawlers / LLM Bots
   "gptbot",
   "chatgpt",
+  "openai",
   "claudebot",
   "anthropic-ai",
   "google-extended",
+  "googleother",
+  "bard",
+  "gemini",
   "bytespider",
   "ccbot",
+  "amazonbot",
+  "omgili",
+  "omgilibot",
+  "perplexitybot",
+  "youbot",
+  "cohere-ai",
+  "diffbot",
+  "facebookbot",
+  "meta-externalagent",
+  "imagesiftbot",
+  "timpibot",
 
-  // Crawlers
+  // Crawlers / Scrapers
   "crawler",
+  "crawl",
   "spider",
   "scraper",
-
-  // Recon
-  "scanner",
+  "scrapy",
+  "curl",
+  "wget",
+  "python-requests",
+  "aiohttp",
+  "httpx",
+  "axios",
+  "node-fetch",
+  "okhttp",
+  "libwww-perl",
+  "perl",
+  "go-http-client",
+  "java/",
+  "apache-httpclient",
   "httpclient",
+  "feedfetcher",
+  "rss",
+  "fetch",
+  "python-urllib",
+  "urllib",
+  "lwp",
+  "guzzlehttp",
+
+  // SEO / Archive Bots
+  "ahrefsbot",
+  "semrushbot",
+  "mj12bot",
+  "dotbot",
+  "blexbot",
+  "seznambot",
+  "yandexbot",
+  "petalbot",
+  "applebot",
+  "bingbot",
+  "bingpreview",
+  "duckduckbot",
+  "baiduspider",
+  "sogou",
+  "exabot",
+  "facebot",
+  "ia_archiver",
+  "archive.org_bot",
+  "slurp",
+
+  // Recon / Generic
+  "scanner",
+  "probe",
+  "recon",
+  "scan",
+  "monitor",
+  "checker",
+  "validator",
+  "analyzer",
+
+  // Suspicious Empty / Fake
+  "bot",
+  "python",
+  "curl/",
+  "wget/",
+  "libcurl",
+  "powershell",
 ];
 
 const suspiciousHeaders = [
@@ -125,9 +243,7 @@ const scan = (value: any): boolean => {
 
 export const waf = (req: Request, res: Response, next: NextFunction) => {
   try {
-    // ---------------------------------------------------
     // IP
-    // ---------------------------------------------------
 
     const ip =
       (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
@@ -136,9 +252,7 @@ export const waf = (req: Request, res: Response, next: NextFunction) => {
 
     const now = Date.now();
 
-    // ---------------------------------------------------
     // RATE LIMIT
-    // ---------------------------------------------------
 
     if (!ipMemory.has(ip)) {
       ipMemory.set(ip, {
@@ -174,9 +288,7 @@ export const waf = (req: Request, res: Response, next: NextFunction) => {
       }
     }
 
-    // ---------------------------------------------------
     // USER AGENT
-    // ---------------------------------------------------
 
     const userAgent = (req.headers["user-agent"] || "")
       .toString()
@@ -189,9 +301,7 @@ export const waf = (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    // ---------------------------------------------------
     // BLOCK BOTS / SCANNERS
-    // ---------------------------------------------------
 
     const isBlockedAgent = blockedAgents.some((agent) =>
       userAgent.includes(agent),
@@ -204,9 +314,7 @@ export const waf = (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    // ---------------------------------------------------
     // BLOCK SUSPICIOUS HEADERS
-    // ---------------------------------------------------
 
     for (const header of suspiciousHeaders) {
       if (req.headers[header]) {
@@ -217,9 +325,7 @@ export const waf = (req: Request, res: Response, next: NextFunction) => {
       }
     }
 
-    // ---------------------------------------------------
     // URL SCAN
-    // ---------------------------------------------------
 
     const decodedUrl = decodeURIComponent(req.originalUrl);
 
@@ -261,9 +367,7 @@ export const waf = (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    // ---------------------------------------------------
     // RESPONSE SECURITY HEADERS
-    // ---------------------------------------------------
 
     res.removeHeader("X-Powered-By");
 

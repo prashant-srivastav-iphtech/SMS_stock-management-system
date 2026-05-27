@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -78,5 +78,9 @@ app.use("/api/stores", storeRouter);
 app.use("/api/products", productRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/payments", paymentRouter);
+
+app.get("/", (_: Request, res: Response) => {
+  res.send("Hello World");
+});
 
 app.use(errorHandler);
