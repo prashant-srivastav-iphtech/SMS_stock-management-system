@@ -1,15 +1,10 @@
 import CryptoJS from "crypto-js";
 
-const DEFAULT_AES_SECRET = process.env.AES_SECRET!
-
-export const encryptPayload = (payload: any, secret = DEFAULT_AES_SECRET) => {
-  return CryptoJS.AES.encrypt(
-    JSON.stringify(payload),
-    secret,
-  ).toString();
+export const encryptPayload = (payload: any, secret: string) => {
+  return CryptoJS.AES.encrypt(JSON.stringify(payload), secret).toString();
 };
- 
-export const decryptPayload = (encrypted: string, secret = DEFAULT_AES_SECRET) => {
+
+export const decryptPayload = (encrypted: string, secret: string) => {
   const bytes = CryptoJS.AES.decrypt(encrypted, secret);
   const decrypted = bytes.toString(CryptoJS.enc.Utf8);
 
