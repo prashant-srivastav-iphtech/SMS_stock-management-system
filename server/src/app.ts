@@ -3,17 +3,19 @@ import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { requestLogger, errorHandler } from "./middlewares/error.middleware";
-import { encryptResponseBody } from "./middlewares/responseEncryption.middleware";
 import authRouter from "./modules/auth/auth.routes";
 import storeRouter from "./modules/stores/store.routes";
 import productRouter from "./modules/products/product.routes";
 import orderRouter from "./modules/orders/order.routes";
 import paymentRouter from "./modules/payments/payment.routes";
 import { PaymentController } from "./modules/payments/payment.controller";
-import { verifyHmac } from "./middlewares/hmac.middleware";
-import { decryptRequestBody } from "./middlewares/encryption.middleware";
 import "./models";
 import { RateLimit } from "./middlewares/rateLimit.middleware";
+import {
+  decryptRequestBody,
+  encryptResponseBody,
+  verifyHmac,
+} from "./middlewares/payload.middleware";
 // custom packages
 import { createWaf } from "iph-waf";
 import { createCsrfProtection } from "iph-csrf";
