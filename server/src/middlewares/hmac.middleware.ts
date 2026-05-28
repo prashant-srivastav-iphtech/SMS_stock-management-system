@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
 import { verifyAccessToken } from "../security/jwt";
 import { Session } from "../models/session.model";
-import { isBootstrapAuthRoute, isPaymentsWebhookRoute } from "../utils/security-routes";
+import { isBootstrapAuthRoute } from "../utils/skip";
 
 const computeSignature = (secret: string, message: string) =>
   crypto.createHmac("sha256", secret).update(message).digest("hex");
@@ -18,7 +18,9 @@ const extractAccessToken = (req: Request): string | undefined => {
   return req.cookies?.accessToken;
 };
 
-const resolveSecret = async (req: Request): Promise<{ secret: string; mode: "bootstrap" | "session" } | null> => {
+const resolveSecret = async (
+  req: Request,
+): Promise<{ secret: string; mode: "bootstrap" | "session" } | null> => {
   const token = extractAccessToken(req);
   if (!token) {
     return { secret: process.env.HMAC_SECRET || "", mode: "bootstrap" };
@@ -31,7 +33,8 @@ const resolveSecret = async (req: Request): Promise<{ secret: string; mode: "boo
     return null;
   }
 
-  const sessionId = typeof payload === "object" ? payload?.sessionId : undefined;
+  const sessionId =
+    typeof payload === "object" ? payload?.sessionId : undefined;
   if (!sessionId) return null;
 
   const session = await Session.findByPk(sessionId);
@@ -40,15 +43,22 @@ const resolveSecret = async (req: Request): Promise<{ secret: string; mode: "boo
   return { secret: session.hmacSecret, mode: "session" };
 };
 
-export const verifyHmac = async (req: Request, res: Response, next: NextFunction) => {
-  if (isPaymentsWebhookRoute(req) || isBootstrapAuthRoute(req)) {
+export const verifyHmac = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (isBootstrapAuthRoute(req)) {
     return next();
   }
 
   const signature = req.headers["x-signature"] as string | undefined;
-  const timestamp = (req.headers["x-timestamp"] as string | undefined) || req.body?.timestamp;
-  const nonce = (req.headers["x-nonce"] as string | undefined) || req.body?.nonce;
-  const encryptedPayload = typeof req.body?.data === "string" ? req.body.data : "";
+  const timestamp =
+    (req.headers["x-timestamp"] as string | undefined) || req.body?.timestamp;
+  const nonce =
+    (req.headers["x-nonce"] as string | undefined) || req.body?.nonce;
+  const encryptedPayload =
+    typeof req.body?.data === "string" ? req.body.data : "";
 
   if (!signature || !timestamp || !nonce) {
     return res.status(401).json({

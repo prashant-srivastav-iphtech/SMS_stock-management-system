@@ -3,8 +3,8 @@ import { randomBytes, randomUUID } from "crypto";
 import { User } from "../../models/user.model";
 import { Session } from "../../models/session.model";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../../security/jwt";
-import { buildDeviceFingerprint } from "../../security/fingerprint";
 import { AppError } from "../../utils/errors";
+import { buildDeviceFingerprint } from "iph-device-fingerprint";
 
 const generateHmacSecret = () => randomBytes(32).toString("hex");
 
@@ -109,3 +109,4 @@ export class AuthService {
     }
   }
 }
+

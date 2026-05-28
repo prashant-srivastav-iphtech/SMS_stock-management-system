@@ -3,9 +3,6 @@ import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { requestLogger, errorHandler } from "./middlewares/error.middleware";
-import { securityHeaders } from "./middlewares/security.middleware";
-import { deviceFingerprint } from "./middlewares/device.middleware";
-import { replayProtection } from "./middlewares/replay.middleware";
 import { encryptResponseBody } from "./middlewares/responseEncryption.middleware";
 import authRouter from "./modules/auth/auth.routes";
 import storeRouter from "./modules/stores/store.routes";
@@ -15,10 +12,15 @@ import paymentRouter from "./modules/payments/payment.routes";
 import { PaymentController } from "./modules/payments/payment.controller";
 import { verifyHmac } from "./middlewares/hmac.middleware";
 import { decryptRequestBody } from "./middlewares/encryption.middleware";
-import { csrfProtection } from "./middlewares/csrf.middleware";
 import "./models";
 import { RateLimit } from "./middlewares/rateLimit.middleware";
-import { waf } from "./middlewares/waf.middleware";
+// custom packages
+import { createWaf } from "iph-waf";
+import { createCsrfProtection } from "iph-csrf";
+import { createSecurityHeaders } from "iph-security-headers";
+import { createDeviceFingerprintMiddleware } from "iph-device-fingerprint";
+import { createMemoryNonceStore, createReplayProtection } from "iph-replay-guard";
+import { skipPaths } from "./utils/skip";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
@@ -40,7 +42,7 @@ app.use(
 );
 
 app.set("trust proxy", 1);
-app.use(waf);
+app.use(createWaf());
 
 app.use(
   cors({
@@ -65,11 +67,12 @@ app.use(requestLogger);
 
 app.use(RateLimit.global());
 
-app.use(securityHeaders);
-app.use(deviceFingerprint);
-app.use(replayProtection);
+app.use(createSecurityHeaders());
+app.use(createDeviceFingerprintMiddleware());
+const store = createMemoryNonceStore();
+app.use(createReplayProtection({ store, skipPaths }));
 app.use(verifyHmac);
-app.use(csrfProtection);
+app.use(createCsrfProtection({ skipPaths }));
 app.use(decryptRequestBody);
 app.use(encryptResponseBody);
 

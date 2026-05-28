@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { decryptPayload } from "../security/aes";
-import { isBootstrapAuthRoute } from "../utils/security-routes";
+import { isBootstrapAuthRoute } from "../utils/skip";
 
 export const decryptRequestBody = (req: Request, _res: Response, next: NextFunction) => {
   if (isBootstrapAuthRoute(req)) {

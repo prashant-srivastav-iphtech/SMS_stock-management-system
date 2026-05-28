@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { NextFunction, Request, Response } from "express";
 import { encryptPayload } from "../security/aes";
 import { computeHmac } from "../security/hmac";
-import { isBootstrapAuthRoute } from "../utils/security-routes";
+import { isBootstrapAuthRoute } from "../utils/skip";
 
 type JsonResponse = Response["json"];
 
@@ -20,7 +20,9 @@ export const encryptResponseBody = (
 
     const timestamp = Date.now().toString();
     const nonce = randomUUID();
-    const secret = (req as Request & { hmacSecret?: string }).hmacSecret || process.env.HMAC_SECRET!;
+    const secret =
+      (req as Request & { hmacSecret?: string }).hmacSecret ||
+      process.env.HMAC_SECRET!;
     const encryptedData = encryptPayload(body, secret);
     const signature = computeHmac(
       `${timestamp}:${nonce}:${encryptedData}`,
